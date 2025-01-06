@@ -41,3 +41,12 @@ The tapes use binaural beats in the Theta range, with frequencies such as:
 - 3.5 Hz: Commonly used to induce deep meditation and a gateway into altered states of consciousness.
 - 4 Hz: Facilitates access to the subconscious and supports lucid dreaming or OBEs.
 - 7.83 Hz (Schumann Resonance): This frequency is said to harmonize with the Earth's magnetic field, aiding grounding and balance.
+
+### Further Reference Sources
+
+- https://forums-archive.anarchy-online.com/showthread.php?536724-Monroe-Institute-Studies
+- https://uazu.net/sbagen/
+    https://uazu.net/sbagen/sbagen.txt
+- https://uazu.net/bavsa/ Binaural Beats Visualization
+- https://www.cia.gov/readingroom/docs/cia-rdp96-00788r001700210016-5.pdf -- need to still digest this
+
