@@ -38,7 +38,7 @@ def normalize_audio(audio):
         audio /= max_val
     return audio
 
-def generate_binaural_beats_stream(base_frequency, beat_frequency, sample_rate=44100):
+def generate_binaural_beats_stream(base_frequency, beat_frequency, sample_rate=44100, volume=0.5):
     """
     Generate and play binaural beats continuously using a stream.
 
@@ -49,8 +49,8 @@ def generate_binaural_beats_stream(base_frequency, beat_frequency, sample_rate=4
     """
     def callback(outdata, frames, time, status):
         t = np.arange(frames) / sample_rate + callback.t
-        left_channel = np.sin(2 * np.pi * base_frequency * t)
-        right_channel = np.sin(2 * np.pi * (base_frequency + beat_frequency) * t)
+        left_channel = np.sin(2 * np.pi * base_frequency * t) * volume
+        right_channel = np.sin(2 * np.pi * (base_frequency + beat_frequency) * t) * volume
         outdata[:, 0] = left_channel
         outdata[:, 1] = right_channel
         callback.t = t[-1] + 1 / sample_rate
@@ -148,9 +148,9 @@ def main():
     args = parser.parse_args()
 
     if args.hemi_sync:
-        print("Hemi-Sync mode activated: Base frequency = 100 Hz, Beat frequency = 4 Hz")
+        print("Hemi-Sync mode activated: Base frequency = 100 Hz, Beat frequency = 3.78 Hz")
         base_frequency = 100.0
-        beat_frequency = 4.0
+        beat_frequency = 3.78
     else:
         if args.base_frequency is None or args.beat_frequency is None:
             parser.error("--base-frequency and --beat-frequency are required unless --hemi-sync is specified.")
@@ -169,7 +169,7 @@ def main():
         sd.wait()
         print("Done.")
     else:
-        generate_binaural_beats_stream(base_frequency, beat_frequency)
+        generate_binaural_beats_stream(base_frequency, beat_frequency, volume=args.volume)
 
 if __name__ == "__main__":
     main()
