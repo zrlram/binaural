@@ -1,5 +1,6 @@
 #!/opt/homebrew/opt/python@3/libexec/bin/python
 
+import time
 import argparse
 import numpy as np
 import sounddevice as sd
@@ -133,17 +134,71 @@ def overlay_and_save_binaural_beats(base_frequency, beat_frequency, input_file, 
     sf.write(output_file, overlaid_audio, sample_rate)
     print(f"Saved overlaid audio to {output_file}")
 
+def play_solfeggio_frequencies(beat_frequency=0, sample_rate=44100, volume=0.5):
+    """
+    Continuously plays through the Solfeggio frequencies, one per minute.
+    
+    Args:
+        generate_tone: A function that takes a frequency in Hz and generates the corresponding tone
+    """
+
+    def callback(outdata, frames, time, status):
+        t = np.arange(frames) / sample_rate + callback.t
+        left_channel = np.sin(2 * np.pi * base_frequency * t) * volume
+        right_channel = np.sin(2 * np.pi * (base_frequency + beat_frequency) * t) * volume
+        outdata[:, 0] = left_channel
+        outdata[:, 1] = right_channel
+        callback.t = t[-1] + 1 / sample_rate
+
+    callback.t = 0
+
+
+    # Solfeggio frequencies in Hz
+    frequencies = [
+        396,  # UT - Liberation from fear and guilt
+        417,  # RE - Undoing situations and facilitating change
+        528,  # MI - Transformation and miracles
+        639,  # FA - Connecting/relationships
+        741,  # SOL - Awakening intuition
+        852   # LA - Returning to spiritual order
+    ]
+    
+    frequency_names = [
+        "UT (396 Hz)",
+        "RE (417 Hz)",
+        "MI (528 Hz)",
+        "FA (639 Hz)",
+        "SOL (741 Hz)",
+        "LA (852 Hz)"
+    ]
+    
+    print("Starting Solfeggio frequency cycle...")
+    
+
+    try:
+        while True:
+            for base_frequency, name in zip(frequencies, frequency_names):
+                print(f"\nPlaying {name} with {beat_frequency}")
+                with sd.OutputStream(channels=2, samplerate=sample_rate, callback=callback):
+                # Wait for one minute
+                    time.sleep(60)
+                
+    except KeyboardInterrupt:
+        print("\nStopping Solfeggio frequency cycle...")
+
 def main():
     parser = argparse.ArgumentParser(description="Binaural Beats Generator")
     parser.add_argument("--base-frequency", type=float, help="Base frequency in Hz (e.g., 200)")
     parser.add_argument("--beat-frequency", type=float, help="Beat frequency in Hz (e.g., 10)")
     parser.add_argument("--duration", type=float, help="Duration in seconds (e.g., 30). If omitted, plays indefinitely.")
     parser.add_argument("--hemi-sync", action="store_true", help="Play a Hemi-Sync compatible beat (defaults to 100 Hz base and 4 Hz beat)")
+    parser.add_argument("--schumann", action="store_true", help="Play a Schumann compatible beat (7.83Hz)")
     parser.add_argument("--audio-file", type=str, help="Path to an audio file (e.g., MP3) to overlay binaural beats on.")
     parser.add_argument("--input-file", type=str, help="Path to an input audio file for overlaying binaural beats.")
     parser.add_argument("--output-file", type=str, help="Path to save the output audio file.")
     parser.add_argument("--output-format", type=str, choices=["wav", "flac"], default="wav", help="Output audio file format (wav or flac). Default is wav.")
     parser.add_argument("--volume", type=float, default=0.5, help="Volume of the binaural beats (0.0 to 1.0). Default is 0.5.")
+    parser.add_argument("--solfeggio", action="store_true", help="Play Solfeggio base frequencies")
 
     args = parser.parse_args()
 
@@ -152,12 +207,29 @@ def main():
         base_frequency = 100.0
         beat_frequency = 3.78
     else:
-        if args.base_frequency is None or args.beat_frequency is None:
-            parser.error("--base-frequency and --beat-frequency are required unless --hemi-sync is specified.")
-        base_frequency = args.base_frequency
-        beat_frequency = args.beat_frequency
 
-    if args.input_file and args.output_file:
+        if args.solfeggio:
+            print("Playing Solfeggio Freuqencies")
+            if args.beat_frequency is None and args.schumann is None:
+                parser.error("--beat-frequency or --schumann is required")
+            beat_frequency = args.beat_frequency or 7.83
+        if args.schumann:
+            print("Schumann beat frequency = 7.83 Hz")
+            beat_frequency = 7.83
+            if args.base_frequency is None and args.solfeggio is None:
+                parser.error("--base-frequency is required")
+            base_frequency = args.base_frequency or 0     # 0 if we are in solfeggio
+        if ( args.base_frequency is None or args.beat_frequency is None ) and beat_frequency == 0 and base_frequency == 0:
+            parser.error("--base-frequency and --beat-frequency are required unless --hemi-sync or --solfeggio is specified.")
+        else:
+            if not args.solfeggio:
+                beat_frequency = args.beat_frequency
+            if not args.schumann:
+                base_frequency = args.base_frequency
+
+    if args.solfeggio:
+        play_solfeggio_frequencies(beat_frequency, volume=args.volume)
+    elif args.input_file and args.output_file:
         overlay_and_save_binaural_beats(base_frequency, beat_frequency, args.input_file, args.output_file, volume=args.volume)
     elif args.audio_file:
         play_binaural_beats_with_audio(base_frequency, beat_frequency, args.audio_file, volume=args.volume)

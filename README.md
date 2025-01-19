@@ -4,11 +4,18 @@
 
 Just play the sound
 
-> ./play_binaural.py --hemi-sync
-
-> ./play_binaural.py --beat-frequency 10 --base-frequency 200 
-
 > ./add_binaural.py --hemi-sync
+
+> ./add_binaural.py --beat-frequency 10 --base-frequency 200 
+
+> ./add_binaural.py --hemi-sync --volume 0.5
+
+Play throught the solfeggio frequencies
+
+> ./add_binaural.py --solfeggio --schumann
+
+> ./add_binaural.py --solfeggio --beat-frequency 1
+
 
 Play as an overlay to audio
 
