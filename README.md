@@ -12,9 +12,11 @@ Just play the sound
 
 Play throught the solfeggio frequencies
 
-> ./add_binaural.py --solfeggio --schumann
+> ./add_binaural.py --solfeggio --schumann      # set beat to 7.83
 
 > ./add_binaural.py --solfeggio --beat-frequency 1
+
+> ./add_binaural.py --base-frequency 100 --beat-frequency 3     # Delta - Trance
 
 
 Play as an overlay to audio

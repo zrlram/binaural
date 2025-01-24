@@ -201,6 +201,8 @@ def main():
     parser.add_argument("--solfeggio", action="store_true", help="Play Solfeggio base frequencies")
 
     args = parser.parse_args()
+    beat_frequency = 0
+    base_frequency = 0
 
     if args.hemi_sync:
         print("Hemi-Sync mode activated: Base frequency = 100 Hz, Beat frequency = 3.78 Hz")
@@ -219,7 +221,7 @@ def main():
             if args.base_frequency is None and args.solfeggio is None:
                 parser.error("--base-frequency is required")
             base_frequency = args.base_frequency or 0     # 0 if we are in solfeggio
-        if ( args.base_frequency is None or args.beat_frequency is None ) and beat_frequency == 0 and base_frequency == 0:
+        if ( not args.base_frequency or not args.beat_frequency ) and beat_frequency == 0 and base_frequency == 0:
             parser.error("--base-frequency and --beat-frequency are required unless --hemi-sync or --solfeggio is specified.")
         else:
             if not args.solfeggio:
