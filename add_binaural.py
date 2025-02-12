@@ -58,7 +58,7 @@ def generate_binaural_beats_stream(base_frequency, beat_frequency, sample_rate=4
 
     callback.t = 0
 
-    print("Playing binaural beats indefinitely. Press Ctrl+C to stop.")
+    print(f"Playing binaural beats (base = {base_frequency}, beat = {beat_frequency}) indefinitely. Press Ctrl+C to stop.")
     try:
         with sd.OutputStream(channels=2, samplerate=sample_rate, callback=callback):
             input()  # Keep the stream open until interrupted
@@ -173,7 +173,6 @@ def play_solfeggio_frequencies(beat_frequency=0, sample_rate=44100, volume=0.5):
     ]
     
     print("Starting Solfeggio frequency cycle...")
-    
 
     try:
         while True:
@@ -214,20 +213,23 @@ def main():
             print("Playing Solfeggio Freuqencies")
             if args.beat_frequency is None and args.schumann is None:
                 parser.error("--beat-frequency or --schumann is required")
-            beat_frequency = args.beat_frequency or 7.83
+            beat_frequency = 7.83
+            base_frequency = 1      # not used, just to pass the test below
         if args.schumann:
             print("Schumann beat frequency = 7.83 Hz")
             beat_frequency = 7.83
             if args.base_frequency is None and args.solfeggio is None:
                 parser.error("--base-frequency is required")
-            base_frequency = args.base_frequency or 0     # 0 if we are in solfeggio
-        if ( not args.base_frequency or not args.beat_frequency ) and beat_frequency == 0 and base_frequency == 0:
-            parser.error("--base-frequency and --beat-frequency are required unless --hemi-sync or --solfeggio is specified.")
-        else:
-            if not args.solfeggio:
-                beat_frequency = args.beat_frequency
-            if not args.schumann:
-                base_frequency = args.base_frequency
+            base_frequency = args.base_frequency 
+
+        if (base_frequency == 0):
+            base_frequency = args.base_frequency
+        if (beat_frequency == 0):
+            beat_frequency = args.beat_frequency
+            
+        if ( not beat_frequency or not base_frequency or beat_frequency == 0 or base_frequency == 0 ):
+            parser.error("--base-frequency and --beat-frequency are required unless --hemi-sync or --solfeggio or --schumann is specified.")
+            exit
 
     if args.solfeggio:
         play_solfeggio_frequencies(beat_frequency, volume=args.volume)
