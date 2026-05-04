@@ -23,6 +23,9 @@ class BinauralBeat:
     base_freq: float
     beat_freq: float
     amplitude: float
+    prominence_db: float
+    intensity_score: float
+    intensity: str
     band: str
     confidence: str
 
@@ -31,6 +34,7 @@ class BinauralBeat:
 class Peak:
     freq: float
     amp: float
+    prominence: float
 
 
 def load_pyplot():
@@ -166,11 +170,14 @@ class BinauralBeatDetector:
             local_peaks, _ = signal.find_peaks(search_db, height=floor)
             if local_peaks.size == 0:
                 local_peaks = np.array([int(np.argmax(search_db))])
+                prominences = np.array([float(np.max(search_db) - np.median(search_db))])
+            else:
+                prominences = signal.peak_prominences(search_db, local_peaks)[0]
 
             absolute_indices = freq_indices[local_peaks]
             candidates = [
-                self.interpolate_peak(frequencies, frame_db, int(index))
-                for index in absolute_indices
+                self.interpolate_peak(frequencies, frame_db, int(index), float(prominence))
+                for index, prominence in zip(absolute_indices, prominences)
             ]
             candidates.sort(key=lambda peak: peak.amp, reverse=True)
             peaks_by_frame.append(candidates[: self.max_peaks])
@@ -189,6 +196,7 @@ class BinauralBeatDetector:
         frequencies: np.ndarray,
         frame_db: np.ndarray,
         peak_index: int,
+        prominence: float,
     ) -> Peak:
         """Refine a spectral peak using quadratic interpolation."""
         freq = float(frequencies[peak_index])
@@ -203,7 +211,7 @@ class BinauralBeatDetector:
                 if abs(offset) <= 1:
                     freq += float(offset * (frequencies[1] - frequencies[0]))
                     amp = float(center - 0.25 * (left - right) * offset)
-        return Peak(freq=freq, amp=amp)
+        return Peak(freq=freq, amp=amp, prominence=prominence)
 
     def frame_pair_candidates(
         self,
@@ -231,6 +239,7 @@ class BinauralBeatDetector:
                         "base_freq": min(left.freq, right.freq),
                         "beat_freq": beat_freq,
                         "amplitude": (left.amp + right.amp) / 2,
+                        "prominence_db": (left.prominence + right.prominence) / 2,
                     }
                 )
         candidates.sort(key=lambda item: (-item["amplitude"], item["beat_freq"]))
@@ -324,6 +333,7 @@ class BinauralBeatDetector:
             "right_freqs": [pair["right_freq"]],
             "beat_freqs": [pair["beat_freq"]],
             "amplitudes": [pair["amplitude"]],
+            "prominences": [pair["prominence_db"]],
         }
 
     @staticmethod
@@ -337,6 +347,7 @@ class BinauralBeatDetector:
         track["right_freqs"].append(pair["right_freq"])
         track["beat_freqs"].append(pair["beat_freq"])
         track["amplitudes"].append(pair["amplitude"])
+        track["prominences"].append(pair["prominence_db"])
 
     def finalize_track(
         self,
@@ -369,6 +380,8 @@ class BinauralBeatDetector:
         else:
             confidence = "low"
 
+        prominence_db = float(np.mean(track["prominences"]))
+        intensity_score = self.intensity_score(prominence_db)
         return BinauralBeat(
             start_time=start_time,
             duration=duration,
@@ -377,6 +390,9 @@ class BinauralBeatDetector:
             base_freq=min(left_freq, right_freq),
             beat_freq=beat_freq,
             amplitude=float(np.mean(track["amplitudes"])),
+            prominence_db=prominence_db,
+            intensity_score=intensity_score,
+            intensity=self.classify_intensity(intensity_score),
             band=self.classify_band(beat_freq),
             confidence=confidence,
         )
@@ -443,6 +459,19 @@ class BinauralBeatDetector:
         if beat_freq >= 30.0:
             return "gamma"
         return "sub-delta"
+
+    @staticmethod
+    def intensity_score(prominence_db: float) -> float:
+        """Map spectral prominence to a 0-100 signal-intensity score."""
+        return float(np.clip((prominence_db / 40.0) * 100.0, 0.0, 100.0))
+
+    @staticmethod
+    def classify_intensity(intensity_score: float) -> str:
+        if intensity_score >= 75.0:
+            return "high"
+        if intensity_score >= 40.0:
+            return "medium"
+        return "low"
 
     def visualize_analysis(
         self,
@@ -686,8 +715,8 @@ def main() -> None:
         return
 
     if not args.verbose:
-        print("start   end     dur    base Hz   left Hz   right Hz  beat Hz  band   conf")
-        print("------  ------  -----  --------  --------  --------  -------  -----  ----")
+        print("start   end     dur    base Hz   left Hz   right Hz  beat Hz  band   conf  int   score")
+        print("------  ------  -----  --------  --------  --------  -------  -----  ----  ----  -----")
         for beat in beats:
             end_time = beat.start_time + beat.duration
             print(
@@ -699,7 +728,9 @@ def main() -> None:
                 f"{beat.right_freq:8.2f}  "
                 f"{beat.beat_freq:7.2f}  "
                 f"{beat.band:5s}  "
-                f"{beat.confidence}"
+                f"{beat.confidence:4s}  "
+                f"{beat.intensity:4s}  "
+                f"{beat.intensity_score:5.1f}"
             )
         return
 
@@ -713,6 +744,9 @@ def main() -> None:
         print(f"  Beat frequency: {beat.beat_freq:.2f}Hz")
         print(f"  Band: {beat.band}")
         print(f"  Confidence: {beat.confidence}")
+        print(f"  Intensity: {beat.intensity}")
+        print(f"  Intensity score: {beat.intensity_score:.1f}/100")
+        print(f"  Prominence: {beat.prominence_db:.1f}dB")
         print(f"  Amplitude: {beat.amplitude:.1f}dB")
         print()
 

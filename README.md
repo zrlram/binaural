@@ -66,11 +66,13 @@ The detector looks for prolonged sections where one ear has a base tone and the 
 Example output:
 
 ```text
-start   end     dur    base Hz   left Hz   right Hz  beat Hz  band   conf
-------  ------  -----  --------  --------  --------  -------  -----  ----
-   0.0    60.0   60.0    200.00    200.00    204.00     4.00  theta  high
-  60.0   120.0   60.0    250.00    250.00    260.00    10.00  alpha  high
+start   end     dur    base Hz   left Hz   right Hz  beat Hz  band   conf  int   score
+------  ------  -----  --------  --------  --------  -------  -----  ----  ----  -----
+   0.0    60.0   60.0    200.00    200.00    204.00     4.00  theta  high  high  100.0
+  60.0   120.0   60.0    250.00    250.00    260.00    10.00  alpha  high  high  100.0
 ```
+
+`conf` is detection confidence: how stable and continuous the tracked pair is. `int` and `score` are signal intensity: how prominent the carrier tones are against nearby audio, expressed as a label and a 0-100 score. This is not a claim about physiological effect strength.
 
 Analyze only part of a file:
 
@@ -91,6 +93,8 @@ Print the older detailed multi-line output:
 ```bash
 .venv/bin/python detect_beat.py input.mp3 --verbose
 ```
+
+Verbose output includes raw `Prominence` in dB, `Intensity score`, and average spectral `Amplitude` in dB.
 
 Save optional image outputs:
 
